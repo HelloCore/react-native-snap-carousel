@@ -68,6 +68,7 @@ export default class example extends Component {
                   autoplay={true}
                   autoplayDelay={500}
                   autoplayInterval={3000}
+                  autoplayAfterTouchEnd={true}
                   onSnapToItem={(index) => this.setState({ slider1ActiveSlide: index }) }
                 />
                 <Pagination

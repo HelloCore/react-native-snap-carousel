@@ -40,6 +40,7 @@ export default class Carousel extends Component {
         activeSlideOffset: PropTypes.number,
         apparitionDelay: PropTypes.number,
         autoplay: PropTypes.bool,
+        autoplayAfterTouchEnd: PropTypes.bool,
         autoplayDelay: PropTypes.number,
         autoplayInterval: PropTypes.number,
         callbackOffsetMargin: PropTypes.number,
@@ -832,11 +833,11 @@ export default class Carousel extends Component {
     }
 
     _onTouchStart () {
-        const { onTouchStart } = this.props
+        const { onTouchStart, autoplayAfterTouchEnd } = this.props
 
         // `onTouchStart` is fired even when `scrollEnabled` is set to `false`
-        if (this._getScrollEnabled() !== false && this._autoplaying) {
-            this.stopAutoplay();
+        if (this._getScrollEnabled() !== false && this._autoplayingState === 'START') {
+            this.stopAutoplay(autoplayAfterTouchEnd === true);
         }
 
         if (onTouchStart) {
@@ -847,7 +848,7 @@ export default class Carousel extends Component {
     _onTouchEnd () {
         const { onTouchEnd } = this.props
 
-        if (this._getScrollEnabled() !== false && autoplay && !this._autoplaying) {
+        if (this._getScrollEnabled() !== false && this._autoplayingState === 'PAUSE') {
             // This event is buggy on Android, so a fallback is provided in _onScrollEnd()
             this.startAutoplay();
         }
@@ -919,7 +920,7 @@ export default class Carousel extends Component {
 
         // The touchEnd event is buggy on Android, so this will serve as a fallback whenever needed
         // https://github.com/facebook/react-native/issues/9439
-        if (autoplay && !this._autoplaying) {
+        if (this._autoplayingState === 'PAUSE') {
             clearTimeout(this._enableAutoplayTimeout);
             this._enableAutoplayTimeout = setTimeout(() => {
                 this.startAutoplay();
@@ -1082,23 +1083,23 @@ export default class Carousel extends Component {
     startAutoplay () {
         const { autoplayInterval, autoplayDelay } = this.props;
 
-        if (this._autoplaying) {
+        if (this._autoplayingState === 'START') {
             return;
         }
 
         clearTimeout(this._autoplayTimeout);
         this._autoplayTimeout = setTimeout(() => {
-            this._autoplaying = true;
+            this._autoplayingState = 'START';
             this._autoplayInterval = setInterval(() => {
-                if (this._autoplaying) {
+                if (this._autoplayingState === 'START') {
                     this.snapToNext();
                 }
             }, autoplayInterval);
         }, autoplayDelay);
     }
 
-    stopAutoplay () {
-        this._autoplaying = false;
+    stopAutoplay (pausing = false) {
+        this._autoplayingState = pausing ? 'PAUSE' : 'STOP';
         clearInterval(this._autoplayInterval);
     }
 
